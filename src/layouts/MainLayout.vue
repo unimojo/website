@@ -1,43 +1,35 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+  <q-layout view="hHh lpR fFf">
+    <q-header bordered class="bg-primary text-white" height-hint="98">
       <q-toolbar>
+        <img style="width: 100px" class="q-mr-md" src="../assets/logo.svg" />
+        <q-separator dark vertical inset />
+        <q-btn to="/" stretch flat label="Home" :icon="mdiHome" />
+        <q-separator dark vertical inset />
         <q-btn
+          to="/inscription"
+          stretch
           flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
+          label="Inscriptions"
+          :icon="mdiCodeJson"
         />
-
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <q-separator dark vertical inset />
+        <q-space />
+        <q-tabs>
+          <q-route-tab
+            href="https://github.com/unimojo"
+            target="_blank"
+            :icon="mdiGithub"
+          />
+          <q-route-tab href="" target="_blank" :icon="mdiTwitter" />
+          <q-route-tab
+            href="https://docs.unimojo.io"
+            target="_blank"
+            :icon="mdiBookOpenOutline"
+          />
+        </q-tabs>
       </q-toolbar>
     </q-header>
-
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
-    </q-drawer>
 
     <q-page-container>
       <router-view />
@@ -46,57 +38,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { EssentialLinkProps } from 'components/EssentialLink.vue';
-
-const essentialLinks: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-];
-
-const leftDrawerOpen = ref(false)
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
+import {
+  mdiGithub,
+  mdiTwitter,
+  mdiBookOpenOutline,
+  mdiHome,
+  mdiCodeJson,
+} from '@quasar/extras/mdi-v6';
 </script>
