@@ -35,21 +35,21 @@
         <q-separator dark vertical inset />
         <q-space />
         <q-tabs>
-          <q-route-tab
+          <!-- <q-route-tab
             href="https://github.com/unimojo"
             target="_blank"
             :icon="mdiGithub"
-          />
+          /> -->
           <q-route-tab
             href="https://twitter.com/xchscriptions"
             target="_blank"
             :icon="mdiTwitter"
           />
-          <q-route-tab
+          <!-- <q-route-tab
             href="https://docs.unimojo.io"
             target="_blank"
             :icon="mdiBookOpenOutline"
-          />
+          /> -->
         </q-tabs>
       </q-toolbar>
     </q-header>
