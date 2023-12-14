@@ -22,7 +22,7 @@
 
       <div class="row q-gutter-md">
         <q-btn color="primary" to="/xchs" label="Xchs List" />
-        <q-btn color="secondary" to="/inscribe" label="Inscribe" />
+        <!-- <q-btn color="secondary" to="/inscribe" label="Inscribe" /> -->
       </div>
     </div>
   </q-page>
