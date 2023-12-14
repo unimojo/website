@@ -2,9 +2,7 @@
   "name": "unimojo-web",
   "version": "0.0.1",
   "description": "The website of Unimojo",
-  "productName": "Unimojo Web",
-  "author": "LiangShuang <liangshuang@sutu.tech>",
-  "private": true,
+  "productName": "Unimojo - Xchscriptions Protocol",
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
