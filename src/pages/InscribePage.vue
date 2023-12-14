@@ -1,20 +1,20 @@
 <template>
   <q-page>
-    <q-banner class="text-white bg-red">
-      Work In Progress. Not real data so far.
-    </q-banner>
+    <div class="row justify-evenly">
+      <div class="col col-xs-11 col-md-10 col-lg-8">
+        <!-- prettier-ignore -->
+        <q-markdown :src="how"/>
+      </div>
+    </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { Ref, ref } from 'vue';
+import how from '../assets/inscribe.md';
 </script>
 
-<style>
-.my-well {
-  padding: 20px;
-  background-color: #051505;
-  margin-bottom: 20px;
-  border-radius: 10px;
+<style scoped lang="scss">
+::v-deep .q-markdown--link-external {
+  color: $secondary;
 }
 </style>
