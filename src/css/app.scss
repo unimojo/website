@@ -1,1 +1,10 @@
 // app global css in SCSS form
+
+@font-face {
+  font-family: SyneMono-Regular;
+  src: url(./fonts/SyneMono-Regular.ttf);
+}
+
+.synemono {
+  font-family: 'SyneMono-Regular';
+}
