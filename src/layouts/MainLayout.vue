@@ -14,7 +14,7 @@
           label="Xchs"
           :icon="mdiCodeJson"
         />
-        <!-- <q-separator dark vertical inset />
+        <q-separator dark vertical inset />
         <q-btn
           to="/inscribe"
           stretch
@@ -22,7 +22,7 @@
           :class="{ active: $route.path == '/inscribe' }"
           label="Inscribe"
           :icon="mdiLeadPencil"
-        /> -->
+        />
         <q-separator dark vertical inset />
         <q-btn
           to="/market"
@@ -45,11 +45,11 @@
             target="_blank"
             :icon="mdiTwitter"
           />
-          <!-- <q-route-tab
+          <q-route-tab
             href="https://docs.unimojo.io"
             target="_blank"
             :icon="mdiBookOpenOutline"
-          /> -->
+          />
         </q-tabs>
       </q-toolbar>
     </q-header>
