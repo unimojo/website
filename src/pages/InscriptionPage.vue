@@ -51,8 +51,31 @@
               }}</q-item-section>
               <q-item-section>{{ item.index }}</q-item-section>
               <q-item-section> {{ item.lim }} / {{ item.max }} </q-item-section>
-              <q-item-section>-</q-item-section>
-              <q-item-section>-</q-item-section>
+              <q-item-section v-if="item.progress">
+                <q-linear-progress
+                  size="25px"
+                  :value="item.progress"
+                  color="teal-5"
+                  rounded
+                >
+                  <div class="absolute-full flex flex-center">
+                    <q-badge
+                      color="white"
+                      text-color="teal-10"
+                      :label="(item.progress * 100).toFixed(1) + '%'"
+                    />
+                  </div> </q-linear-progress
+              ></q-item-section>
+              <q-item-section v-else>-</q-item-section>
+              <!-- <q-item-section v-if="item.minters">{{
+                item.minters
+              }}</q-item-section>
+              <q-item-section v-else>-</q-item-section> -->
+              <q-item-section v-if="item.mints">{{
+                item.mints
+              }}</q-item-section>
+              <q-item-section v-else>-</q-item-section>
+              <!-- <q-item-section>-</q-item-section> -->
             </q-item>
           </q-list>
         </q-card-section>
@@ -69,13 +92,29 @@ interface TickInfo {
   index: number;
   lim: number;
   max: number;
-  info: string;
+  info: string | DetailTickInfo;
+}
+interface DetailTickInfo {
+  mints?: number;
+  tick?: string;
+  total?: number;
+  minters?: number;
+}
+interface DisplayTickInfo {
+  tick: string;
+  index: number;
+  lim: number;
+  max: number;
+  mints?: number;
+  total?: number;
+  progress?: number;
+  minters?: number;
 }
 
-const loading = ref(true);
+const loading = ref(false);
 
 const search = ref('');
-const listData: Ref<TickInfo[]> = ref([]);
+const listData: Ref<DisplayTickInfo[]> = ref([]);
 
 const filteredList = computed(() => {
   const s = search.value.toLowerCase();
@@ -86,12 +125,37 @@ const filteredList = computed(() => {
 async function loadData() {
   loading.value = true;
   const resp = await fetch('https://walletapi.chiabee.net/inscription/ticks');
-  listData.value = (await resp.json()).ticks as TickInfo[];
+  const rawticks = (await resp.json()).ticks as TickInfo[];
+  listData.value = rawticks.map((item) => {
+    if (typeof item.info === 'string') {
+      const info = JSON.parse(item.info) as DetailTickInfo;
+      let progress = !info.total ? undefined : info.total / item.max;
+      progress = !progress ? undefined : progress > 1 ? 1 : progress;
+      return {
+        tick: item.tick,
+        index: item.index,
+        lim: item.lim,
+        max: item.max,
+        mints: info.mints,
+        minters: info.minters,
+        total: info.total,
+        progress,
+      };
+    } else {
+      return {
+        tick: item.tick,
+        index: item.index,
+        lim: item.lim,
+        max: item.max,
+      };
+    }
+  });
+
   loading.value = false;
-  console.log(listData.value);
+  // console.log(listData.value);
 }
 
-loadData();
+if (!loading.value) loadData();
 </script>
 
 <style>
