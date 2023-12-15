@@ -1,7 +1,8 @@
 <template>
   <q-page>
-    <q-banner class="text-white bg-red">
-      Work In Progress. Not real data so far.
+    <q-banner class="text-white bg-orange">
+      The website currently cannot display the progress of Mint correctly, we
+      are working diligently on this. Please stay tuned for updates on Twitter.
     </q-banner>
     <div class="row justify-evenly">
       <q-input
@@ -21,7 +22,16 @@
     <div class="row justify-evenly">
       <q-card class="my-well col-xs-12 col-md-10 col-lg-8">
         <q-card-section>
-          <q-list clearable>
+          <div v-if="loading" class="row justify-evenly">
+            <q-circular-progress
+              indeterminate
+              rounded
+              size="50px"
+              color="lime"
+              class="q-ma-md"
+            />
+          </div>
+          <q-list v-else clearable>
             <q-item class="q-my-md text-subtitle1">
               <q-item-section></q-item-section>
               <q-item-section>Block Height</q-item-section>
@@ -30,7 +40,7 @@
               <q-item-section>Transactions</q-item-section>
             </q-item>
             <q-item
-              v-for="(item, index) in listData"
+              v-for="(item, index) in filteredList"
               :key="index"
               clickable
               v-ripple
@@ -52,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { Ref, ref } from 'vue';
+import { Ref, computed, ref } from 'vue';
 
 interface TickInfo {
   tick: string;
@@ -62,37 +72,26 @@ interface TickInfo {
   info: string;
 }
 
+const loading = ref(true);
+
 const search = ref('');
-const listData: Ref<TickInfo[]> = ref([
-  {
-    tick: 'xchs',
-    index: 42000000,
-    lim: 1000,
-    max: 21000000000,
-    info: '',
-  },
-  {
-    tick: 'meme',
-    index: 40000000,
-    lim: 1000,
-    max: 21000,
-    info: '',
-  },
-  {
-    tick: 'doge',
-    index: 40000000,
-    lim: 1000,
-    max: 21000000,
-    info: '',
-  },
-  {
-    tick: 'bram',
-    index: 40000000,
-    lim: 1000,
-    max: 21000000,
-    info: '',
-  },
-]);
+const listData: Ref<TickInfo[]> = ref([]);
+
+const filteredList = computed(() => {
+  const s = search.value.toLowerCase();
+  if (!s) return listData.value;
+  return listData.value.filter((_) => _.tick.toLowerCase().includes(s));
+});
+
+async function loadData() {
+  loading.value = true;
+  const resp = await fetch('https://walletapi.chiabee.net/inscription/ticks');
+  listData.value = (await resp.json()).ticks as TickInfo[];
+  loading.value = false;
+  console.log(listData.value);
+}
+
+loadData();
 </script>
 
 <style>
