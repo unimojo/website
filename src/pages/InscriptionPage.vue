@@ -31,49 +31,86 @@
               class="q-ma-md"
             />
           </div>
-          <q-list v-else clearable>
-            <q-item class="q-my-md text-subtitle1">
-              <q-item-section></q-item-section>
-              <q-item-section>Block Height</q-item-section>
-              <q-item-section>Limit / Supply</q-item-section>
-              <q-item-section>Mints</q-item-section>
-              <q-item-section>Minters</q-item-section>
-            </q-item>
-            <q-item
-              v-for="(item, index) in filteredList"
-              :key="index"
-              clickable
-              v-ripple
-              class="bg-teal-10 rounded-borders q-my-md text-subtitle2"
-            >
-              <q-item-section class="synemono text-h4">{{
-                item.tick
-              }}</q-item-section>
-              <q-item-section>{{ item.index }}</q-item-section>
-              <q-item-section> {{ item.lim }} / {{ item.max }} </q-item-section>
-              <q-item-section v-if="item.progress">
-                <q-linear-progress
-                  size="25px"
-                  :value="item.progress"
-                  color="teal-5"
+          <template v-else>
+            <q-card v-if="address">
+              <q-banner class="text-white bg-red">
+                ATTENTION: Current holdings data is not precise even with
+                invalid mints. For accurate info, await our improved indexing.
+              </q-banner>
+              <!-- <q-card-section>
+                <div>
+                  <p>{{ search }}</p>
+                </div>
+              </q-card-section> -->
+
+              <div v-if="!holder" class="row justify-evenly">
+                <q-circular-progress
+                  indeterminate
                   rounded
-                >
-                  <div class="absolute-full flex flex-center">
-                    <q-badge
-                      color="white"
-                      text-color="teal-10"
-                      :label="(item.progress * 100).toFixed(1) + '%'"
-                    />
-                  </div> </q-linear-progress
-              ></q-item-section>
-              <q-item-section v-else>-</q-item-section>
-              <q-item-section v-if="item.minters">{{
-                item.minters
-              }}</q-item-section>
-              <q-item-section v-else>-</q-item-section>
-              <!-- <q-item-section>-</q-item-section> -->
-            </q-item>
-          </q-list>
+                  size="50px"
+                  color="lime"
+                  class="q-ma-md"
+                />
+              </div>
+              <q-card-section v-else>
+                <ul>
+                  <li v-for="(tick, i) in holder.ticks" :key="i">
+                    {{ tick.tick }}
+
+                    <ul>
+                      <li>Total: {{ tick.sum }}</li>
+                      <li>Mints: {{ tick.count }}</li>
+                    </ul>
+                  </li>
+                </ul>
+              </q-card-section>
+            </q-card>
+            <q-list v-else clearable>
+              <q-item class="q-my-md text-subtitle1">
+                <q-item-section></q-item-section>
+                <q-item-section>Block Height</q-item-section>
+                <q-item-section>Limit / Supply</q-item-section>
+                <q-item-section>Mints</q-item-section>
+                <q-item-section>Minters</q-item-section>
+              </q-item>
+              <q-item
+                v-for="(item, index) in filteredList"
+                :key="index"
+                clickable
+                v-ripple
+                class="bg-teal-10 rounded-borders q-my-md text-subtitle2"
+              >
+                <q-item-section class="synemono text-h4">{{
+                  item.tick
+                }}</q-item-section>
+                <q-item-section>{{ item.index }}</q-item-section>
+                <q-item-section>
+                  {{ item.lim }} / {{ item.max }}
+                </q-item-section>
+                <q-item-section v-if="item.progress">
+                  <q-linear-progress
+                    size="25px"
+                    :value="item.progress"
+                    color="teal-5"
+                    rounded
+                  >
+                    <div class="absolute-full flex flex-center">
+                      <q-badge
+                        color="white"
+                        text-color="teal-10"
+                        :label="(item.progress * 100).toFixed(1) + '%'"
+                      />
+                    </div> </q-linear-progress
+                ></q-item-section>
+                <q-item-section v-else>-</q-item-section>
+                <q-item-section v-if="item.minters">{{
+                  item.minters
+                }}</q-item-section>
+                <q-item-section v-else>-</q-item-section>
+                <!-- <q-item-section>-</q-item-section> -->
+              </q-item>
+            </q-list>
+          </template>
         </q-card-section>
       </q-card>
     </div>
@@ -81,7 +118,8 @@
 </template>
 
 <script setup lang="ts">
-import { Ref, computed, ref } from 'vue';
+import { Ref, computed, ref, watch } from 'vue';
+import { bech32m } from '@scure/base';
 
 interface TickInfo {
   tick: string;
@@ -107,20 +145,60 @@ interface DisplayTickInfo {
   minters?: number;
 }
 
+interface HolderTickResponse {
+  ticks: HolderTickInfo[];
+  address: string;
+}
+
+interface HolderTickInfo {
+  tick: string;
+  count: number;
+  sum: number;
+}
+
 const loading = ref(false);
 
+// const baseApiUrl = 'https://walletapi.chiabee.net/';
+const baseApiUrl = 'https://dev.api.pawket.app/';
 const search = ref('');
 const listData: Ref<DisplayTickInfo[]> = ref([]);
+const holder: Ref<HolderTickResponse | undefined> = ref(undefined);
+const address = computed(() => {
+  const s = search.value?.toLowerCase();
+  if (!s) return null;
+  if (!s.startsWith('xch1') || s.length != 62) return null;
+  return Array.from(bech32m.decodeToBytes(s).bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+});
 
 const filteredList = computed(() => {
-  const s = search.value.toLowerCase();
+  const s = search.value?.toLowerCase();
   if (!s) return listData.value;
   return listData.value.filter((_) => _.tick.toLowerCase().includes(s));
 });
 
+watch(
+  () => search,
+  async (newValue, oldValue) => {
+    console.log(newValue.value, oldValue.value);
+    if (!newValue.value) return;
+    if (!address.value) return;
+    if (address.value == holder.value?.address) return;
+    console.log('here', address.value);
+    holder.value = undefined;
+    const resp = await fetch(
+      `${baseApiUrl}inscription/holder/${address.value}`
+    );
+    const rawticks = (await resp.json()).ticks as HolderTickInfo[];
+    holder.value = { ticks: rawticks, address: address.value };
+  },
+  { deep: true }
+);
+
 async function loadData() {
   loading.value = true;
-  const resp = await fetch('https://walletapi.chiabee.net/inscription/ticks');
+  const resp = await fetch(`${baseApiUrl}inscription/ticks`);
   const rawticks = (await resp.json()).ticks as TickInfo[];
   listData.value = rawticks.map((item) => {
     if (typeof item.info === 'string') {
