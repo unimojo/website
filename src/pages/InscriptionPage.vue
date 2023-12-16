@@ -158,8 +158,7 @@ interface HolderTickInfo {
 
 const loading = ref(false);
 
-// const baseApiUrl = 'https://walletapi.chiabee.net/';
-const baseApiUrl = 'https://dev.api.pawket.app/';
+const baseApiUrl = 'https://walletapi.chiabee.net/';
 const search = ref('');
 const listData: Ref<DisplayTickInfo[]> = ref([]);
 const holder: Ref<HolderTickResponse | undefined> = ref(undefined);
@@ -180,12 +179,10 @@ const filteredList = computed(() => {
 
 watch(
   () => search,
-  async (newValue, oldValue) => {
-    console.log(newValue.value, oldValue.value);
+  async (newValue, _oldValue) => {
     if (!newValue.value) return;
     if (!address.value) return;
     if (address.value == holder.value?.address) return;
-    console.log('here', address.value);
     holder.value = undefined;
     const resp = await fetch(
       `${baseApiUrl}inscription/holder/${address.value}`
