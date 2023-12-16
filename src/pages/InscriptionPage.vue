@@ -37,7 +37,7 @@
               <q-item-section>Block Height</q-item-section>
               <q-item-section>Limit / Supply</q-item-section>
               <q-item-section>Mints</q-item-section>
-              <q-item-section>Transactions</q-item-section>
+              <q-item-section>Minters</q-item-section>
             </q-item>
             <q-item
               v-for="(item, index) in filteredList"
@@ -67,12 +67,8 @@
                   </div> </q-linear-progress
               ></q-item-section>
               <q-item-section v-else>-</q-item-section>
-              <!-- <q-item-section v-if="item.minters">{{
+              <q-item-section v-if="item.minters">{{
                 item.minters
-              }}</q-item-section>
-              <q-item-section v-else>-</q-item-section> -->
-              <q-item-section v-if="item.mints">{{
-                item.mints
               }}</q-item-section>
               <q-item-section v-else>-</q-item-section>
               <!-- <q-item-section>-</q-item-section> -->
