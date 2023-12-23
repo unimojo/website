@@ -67,7 +67,8 @@
             </q-card>
             <q-list v-else clearable>
               <q-item class="q-my-md text-subtitle1">
-                <q-item-section></q-item-section>
+                <q-item-section side>#</q-item-section>
+                <q-item-section>Tick</q-item-section>
                 <q-item-section>Block Height</q-item-section>
                 <q-item-section>Limit / Supply</q-item-section>
                 <q-item-section>Mints</q-item-section>
@@ -80,9 +81,12 @@
                 v-ripple
                 class="bg-teal-10 rounded-borders q-my-md text-subtitle2"
               >
-                <q-item-section class="synemono text-h4">{{
-                  item.tick
-                }}</q-item-section>
+                <q-item-section side class="right">
+                  {{ item.id < 9 ? '&nbsp;&nbsp;' : '' }}{{ item.id + 1 }}
+                </q-item-section>
+                <q-item-section class="synemono text-h4">
+                  {{ item.tick }}
+                </q-item-section>
                 <q-item-section>{{ item.index }}</q-item-section>
                 <q-item-section>
                   {{ item.lim }} / {{ item.max }}
@@ -109,6 +113,17 @@
                 <q-item-section v-else>-</q-item-section>
                 <!-- <q-item-section>-</q-item-section> -->
               </q-item>
+              <q-pagination
+                v-model="page"
+                :max="maxPage"
+                direction-links
+                push
+                color="teal"
+                active-design="push"
+                active-color="orange"
+                :max-pages="6"
+                boundary-numbers
+              />
             </q-list>
           </template>
         </q-card-section>
@@ -137,6 +152,7 @@ interface DetailTickInfo {
 interface DisplayTickInfo {
   tick: string;
   index: number;
+  id: number;
   lim: number;
   max: number;
   mints?: number;
@@ -170,11 +186,16 @@ const address = computed(() => {
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('');
 });
+const page = ref(1);
+const maxPage = ref(1);
+const PerPage = 10;
 
 const filteredList = computed(() => {
   const s = search.value?.toLowerCase();
-  if (!s) return listData.value;
-  return listData.value.filter((_) => _.tick.toLowerCase().includes(s));
+  let lst;
+  if (!s) lst = listData.value;
+  lst = listData.value.filter((_) => _.tick.toLowerCase().includes(s));
+  return lst.slice((page.value - 1) * PerPage, page.value * PerPage);
 });
 
 watch(
@@ -197,7 +218,7 @@ async function loadData() {
   loading.value = true;
   const resp = await fetch(`${baseApiUrl}inscription/ticks`);
   const rawticks = (await resp.json()).ticks as TickInfo[];
-  listData.value = rawticks.map((item) => {
+  listData.value = rawticks.map((item, i) => {
     if (typeof item.info === 'string') {
       const info = JSON.parse(item.info) as DetailTickInfo;
       let progress = !info.total ? undefined : info.total / item.max;
@@ -205,6 +226,7 @@ async function loadData() {
       return {
         tick: item.tick,
         index: item.index,
+        id: i,
         lim: item.lim,
         max: item.max,
         mints: info.mints,
@@ -215,6 +237,7 @@ async function loadData() {
     } else {
       return {
         tick: item.tick,
+        id: i,
         index: item.index,
         lim: item.lim,
         max: item.max,
@@ -222,6 +245,7 @@ async function loadData() {
     }
   });
 
+  maxPage.value = Math.ceil(listData.value.length / PerPage);
   loading.value = false;
   // console.log(listData.value);
 }
