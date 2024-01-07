@@ -1,8 +1,9 @@
 <template>
   <q-page>
     <q-banner class="text-white bg-orange">
-      The website currently cannot display the progress of Mint correctly, we
-      are working diligently on this. Please stay tuned for updates on Twitter.
+      Our indexer is currently in beta testing. Occasionally, synchronization
+      may pause, leading to inaccuracies in balance display. Please stay tuned
+      for updates on Twitter.
     </q-banner>
     <div class="row justify-evenly">
       <q-input
@@ -33,10 +34,6 @@
           </div>
           <template v-else>
             <q-card v-if="address">
-              <q-banner class="text-white bg-red">
-                ATTENTION: Current holdings data is not precise even with
-                invalid mints. For accurate info, await our improved indexing.
-              </q-banner>
               <!-- <q-card-section>
                 <div>
                   <p>{{ search }}</p>
@@ -54,13 +51,38 @@
               </div>
               <q-card-section v-else>
                 <ul>
-                  <li v-for="(tick, i) in holder.ticks" :key="i">
-                    {{ tick.tick }}
+                  <li
+                    v-for="(tick, i) in holder.ticks"
+                    :key="i"
+                    class="q-my-sm"
+                  >
+                    <template v-if="typeof tick === 'string'">
+                      <span class="synemono q-mr-sm">
+                        {{ tick }}
+                      </span>
+                      <q-btn
+                        color="secondary"
+                        size="sm"
+                        label="Load Balance"
+                        @click="loadBalance(tick)"
+                      />
+                    </template>
+                    <template v-else-if="tick.loading">
+                      <span class="synemono q-mr-sm">
+                        {{ tick.tick }}
+                      </span>
 
-                    <ul>
-                      <li>Total: {{ tick.sum }}</li>
-                      <li>Mints: {{ tick.count }}</li>
-                    </ul>
+                      <q-spinner-grid color="primary" size="2em" />
+                    </template>
+                    <template v-else>
+                      <span class="synemono q-mr-sm">
+                        {{ tick.tick }}
+                      </span>
+
+                      <ul>
+                        <li>Balance: {{ tick.balance }}</li>
+                      </ul>
+                    </template>
                   </li>
                 </ul>
               </q-card-section>
@@ -69,10 +91,10 @@
               <q-item class="q-my-md text-subtitle1">
                 <q-item-section side>#</q-item-section>
                 <q-item-section>Tick</q-item-section>
-                <q-item-section>Block Height</q-item-section>
+                <!-- <q-item-section>Block Height</q-item-section> -->
                 <q-item-section>Limit / Supply</q-item-section>
                 <q-item-section>Mints</q-item-section>
-                <q-item-section>Minters</q-item-section>
+                <!-- <q-item-section>Minters</q-item-section> -->
               </q-item>
               <q-item
                 v-for="(item, index) in filteredList"
@@ -87,7 +109,7 @@
                 <q-item-section class="synemono text-h4">
                   {{ item.tick }}
                 </q-item-section>
-                <q-item-section>{{ item.index }}</q-item-section>
+                <!-- <q-item-section>{{ item.index }}</q-item-section> -->
                 <q-item-section>
                   {{ item.lim }} / {{ item.max }}
                 </q-item-section>
@@ -107,10 +129,10 @@
                     </div> </q-linear-progress
                 ></q-item-section>
                 <q-item-section v-else>-</q-item-section>
-                <q-item-section v-if="item.minters">{{
+                <!-- <q-item-section v-if="item.minters">{{
                   item.minters
                 }}</q-item-section>
-                <q-item-section v-else>-</q-item-section>
+                <q-item-section v-else>-</q-item-section> -->
                 <!-- <q-item-section>-</q-item-section> -->
               </q-item>
               <q-pagination
@@ -138,43 +160,38 @@ import { bech32m } from '@scure/base';
 
 interface TickInfo {
   tick: string;
-  index: number;
-  lim: number;
+  // index: number;
+  limit: number;
   max: number;
-  info: string | DetailTickInfo;
-}
-interface DetailTickInfo {
-  mints?: number;
-  tick?: string;
-  total?: number;
-  minters?: number;
+  total: number;
+  // info: string | DetailTickInfo;
 }
 interface DisplayTickInfo {
   tick: string;
-  index: number;
+  // index?: number;
   id: number;
   lim: number;
   max: number;
-  mints?: number;
+  // mints?: number;
   total?: number;
   progress?: number;
-  minters?: number;
+  // minters?: number;
 }
 
 interface HolderTickResponse {
-  ticks: HolderTickInfo[];
+  ticks: (HolderTickInfo | string)[];
   address: string;
 }
 
 interface HolderTickInfo {
   tick: string;
-  count: number;
-  sum: number;
+  balance?: number;
+  loading?: boolean;
 }
 
 const loading = ref(false);
 
-const baseApiUrl = 'https://walletapi.chiabee.net/';
+const baseApiUrl = 'https://api.unimojo.io/';
 const search = ref('');
 const listData: Ref<DisplayTickInfo[]> = ref([]);
 const holder: Ref<HolderTickResponse | undefined> = ref(undefined);
@@ -191,7 +208,7 @@ const maxPage = ref(1);
 const PerPage = 10;
 
 const filteredList = computed(() => {
-  const s = search.value?.toLowerCase();
+  const s = search.value?.toLowerCase() ?? '';
   let lst;
   if (!s) lst = listData.value;
   lst = listData.value.filter((_) => _.tick.toLowerCase().includes(s));
@@ -200,6 +217,7 @@ const filteredList = computed(() => {
 
 watch(
   () => search,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (newValue, _oldValue) => {
     if (!newValue.value) return;
     if (!address.value) return;
@@ -208,41 +226,49 @@ watch(
     const resp = await fetch(
       `${baseApiUrl}inscription/holder/${address.value}`
     );
-    const rawticks = (await resp.json()).ticks as HolderTickInfo[];
+    const rawticks = (await resp.json()).ticks as string[];
     holder.value = { ticks: rawticks, address: address.value };
   },
   { deep: true }
 );
+
+async function loadBalance(tick: string) {
+  if (!holder.value) return;
+  const i = holder.value.ticks.findIndex((_) => _ == tick);
+  if (i == -1) return;
+  holder.value.ticks[i] = {
+    tick,
+    loading: true,
+  };
+  const resp = await fetch(
+    `${baseApiUrl}inscription/holder/${address.value}/${tick}`
+  );
+  const data = await resp.json();
+  holder.value.ticks[i] = {
+    tick,
+    loading: false,
+    balance: data.balance,
+  };
+}
 
 async function loadData() {
   loading.value = true;
   const resp = await fetch(`${baseApiUrl}inscription/ticks`);
   const rawticks = (await resp.json()).ticks as TickInfo[];
   listData.value = rawticks.map((item, i) => {
-    if (typeof item.info === 'string') {
-      const info = JSON.parse(item.info) as DetailTickInfo;
-      let progress = !info.total ? undefined : info.total / item.max;
-      progress = !progress ? undefined : progress > 1 ? 1 : progress;
-      return {
-        tick: item.tick,
-        index: item.index,
-        id: i,
-        lim: item.lim,
-        max: item.max,
-        mints: info.mints,
-        minters: info.minters,
-        total: info.total,
-        progress,
-      };
-    } else {
-      return {
-        tick: item.tick,
-        id: i,
-        index: item.index,
-        lim: item.lim,
-        max: item.max,
-      };
-    }
+    let progress = !item.total ? undefined : item.total / item.max;
+    progress = !progress ? undefined : progress > 1 ? 1 : progress;
+    return {
+      tick: item.tick,
+      // index: item.index,
+      id: i,
+      lim: item.limit,
+      max: item.max,
+      // mints: info.mints,
+      // minters: info.minters,
+      total: item.total,
+      progress,
+    };
   });
 
   maxPage.value = Math.ceil(listData.value.length / PerPage);
