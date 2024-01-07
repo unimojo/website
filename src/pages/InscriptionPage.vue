@@ -80,9 +80,26 @@
                       </span>
 
                       <ul>
-                        <li>Balance: {{ tick.balance }}</li>
+                        <li
+                          v-if="
+                            typeof tick.balance === 'undefined' ||
+                            tick.balance == null
+                          "
+                        >
+                          No Balance
+                        </li>
+                        <li v-else>Balance: {{ tick.balance }}</li>
                       </ul>
                     </template>
+                  </li>
+                  <li>
+                    <q-btn
+                      color="info"
+                      outline
+                      size="sm"
+                      label="Manual Search Tick"
+                      @click="addTick()"
+                    />
                   </li>
                 </ul>
               </q-card-section>
@@ -157,6 +174,9 @@
 <script setup lang="ts">
 import { Ref, computed, ref, watch } from 'vue';
 import { bech32m } from '@scure/base';
+import { useQuasar } from 'quasar';
+
+const $q = useQuasar();
 
 interface TickInfo {
   tick: string;
@@ -249,6 +269,21 @@ async function loadBalance(tick: string) {
     loading: false,
     balance: data.balance,
   };
+}
+
+function addTick() {
+  $q.dialog({
+    title: 'Manually add your tick',
+    message: 'Input your tick name?',
+    prompt: {
+      model: '',
+      type: 'text', // optional
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk((data) => {
+    holder.value?.ticks.push(data);
+  });
 }
 
 async function loadData() {
