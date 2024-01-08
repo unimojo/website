@@ -114,7 +114,7 @@ function hexToUint8Array(hexString: string) {
   return uint8array;
 }
 function encode(val: string) {
-  return bech32m.encode('xch', hexToUint8Array(val));
+  return bech32m.encode('xch', bech32m.toWords(hexToUint8Array(val)));
 }
 
 const block: Ref<Block | undefined> = ref(undefined);
