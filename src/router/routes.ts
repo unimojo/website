@@ -15,6 +15,10 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/InscribePage.vue'),
       },
       {
+        path: '/chain',
+        component: () => import('pages/BlockchainPage.vue'),
+      },
+      {
         path: '/market',
         component: () => import('pages/MarketPage.vue'),
       },

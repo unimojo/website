@@ -25,6 +25,15 @@
         />
         <q-separator dark vertical inset />
         <q-btn
+          to="/chain"
+          stretch
+          flat
+          :class="{ active: $route.path == '/chain' }"
+          label="Chain"
+          :icon="matSchema"
+        />
+        <q-separator dark vertical inset />
+        <q-btn
           to="/market"
           stretch
           flat
@@ -70,6 +79,7 @@ import {
   mdiShopping,
   mdiLeadPencil,
 } from '@quasar/extras/mdi-v6';
+import { matSchema } from '@quasar/extras/material-icons';
 </script>
 
 <style lang="scss">
