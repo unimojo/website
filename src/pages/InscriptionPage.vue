@@ -50,6 +50,11 @@
                 />
               </div>
               <q-card-section v-else>
+                <q-banner class="text-white bg-red">
+                  Please note: The current balance may be inaccurate due to the
+                  "transfer" operation. It is recommended not to transfer your
+                  inscriptions during the beta testing period.
+                </q-banner>
                 <ul>
                   <li
                     v-for="(tick, i) in holder.ticks"
