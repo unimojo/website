@@ -50,10 +50,12 @@
                 />
               </div>
               <q-card-section v-else>
-                <q-banner class="text-white bg-red">
-                  Please note: The current balance may be inaccurate due to the
-                  "transfer" operation. It is recommended not to transfer your
-                  inscriptions during the beta testing period.
+                <q-banner class="text-white bg-info">
+                  Please be aware that the quick reference list provided here
+                  may not fully reflect your total assets. If there are any
+                  omissions, you are welcome to manually add them. We are
+                  committed to continually improving your experience here. Stay
+                  tuned for further updates. Thank you for your understanding.
                 </q-banner>
                 <ul>
                   <li
