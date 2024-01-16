@@ -19,17 +19,22 @@
             />
           </div>
           <template v-else>
-            <q-card v-if="block" bordered class="q-ma-md q-pa-md">
+            <q-card
+              v-for="(block, i) in blocks"
+              :key="i"
+              bordered
+              class="q-ma-md q-pa-md"
+            >
               <q-card-section>
                 <div class="text-h5 q-mb-sm">
-                  <q-btn
+                  <!-- <q-btn
                     color="primary"
                     outline
                     @click="loadPeekBlock()"
                     icon-right="refresh"
                     size="xs"
                   >
-                  </q-btn>
+                  </q-btn> -->
                   {{ block.header.foliageBlockHeight }}
                   <q-badge align="top">Block Height</q-badge>
                 </div>
@@ -49,22 +54,22 @@
                   Hash: {{ block.header.hash }}
                 </div>
               </q-card-section>
+              <div class="q-pa-md">
+                <q-card
+                  v-if="block.txSummaries.length ?? 0 > 0"
+                  bordered
+                  class="q-ma-md q-pa-md"
+                >
+                  <q-card-section>
+                    <q-table
+                      :rows="block.txSummaries"
+                      :columns="columns"
+                      row-key="name"
+                    />
+                  </q-card-section>
+                </q-card>
+              </div>
             </q-card>
-            <div class="q-pa-md">
-              <q-card
-                v-if="block?.txs.length ?? 0 > 0"
-                bordered
-                class="q-ma-md q-pa-md"
-              >
-                <q-card-section>
-                  <q-table
-                    :rows="block?.txs"
-                    :columns="columns"
-                    row-key="name"
-                  />
-                </q-card-section>
-              </q-card>
-            </div>
           </template>
         </q-card-section>
       </q-card>
@@ -75,7 +80,7 @@
 <script setup lang="ts">
 import { Ref, computed, ref, watch } from 'vue';
 import { bech32m } from '@scure/base';
-
+import { onBeforeRouteLeave } from 'vue-router';
 const baseApiUrl = 'https://api.unimojo.io/';
 const loading = ref(false);
 
@@ -89,20 +94,20 @@ interface BlockHeader {
   hash: string;
 }
 
-interface Tx {
+interface TxSummary {
   rawText: string;
   from: string;
   to: string;
-  coinName: string;
+  // coinName: string;
   status: number;
-  baseWorldState: string;
-  postWorldState: string;
-  hash: string;
+  // baseWorldState: string;
+  // postWorldState: string;
+  // hash: string;
 }
 
 interface Block {
   header: BlockHeader;
-  txs: Tx[];
+  txSummaries: TxSummary[];
 }
 function hexToUint8Array(hexString: string) {
   const length = hexString.length;
@@ -117,7 +122,7 @@ function encode(val: string) {
   return bech32m.encode('xch', bech32m.toWords(hexToUint8Array(val)));
 }
 
-const block: Ref<Block | undefined> = ref(undefined);
+const blocks: Ref<Block[]> = ref([]);
 const columns = [
   {
     name: 'sender',
@@ -136,11 +141,11 @@ const columns = [
     label: 'Status',
     field: 'status',
   },
-  {
-    name: 'hash',
-    label: 'Hash',
-    field: 'hash',
-  },
+  // {
+  //   name: 'hash',
+  //   label: 'Hash',
+  //   field: 'hash',
+  // },
   {
     name: 'raw',
     label: 'Raw Memo',
@@ -148,19 +153,82 @@ const columns = [
   },
 ];
 
-async function loadPeekBlock() {
-  loading.value = true;
-  const resp = await fetch(`${baseApiUrl}block/peek`);
-  const header = (await resp.json()) as BlockHeader;
-  block.value = { header, txs: [] };
-  // const resp2 = await fetch(
-  //   `${baseApiUrl}block/height/${header.foliageBlockHeight}`
-  // );
-  // block.value = (await resp2.json()) as Block;
-  loading.value = false;
+// async function loadPeekBlock() {
+//   loading.value = true;
+//   const resp = await fetch(`${baseApiUrl}block/peek`);
+//   const header = (await resp.json()) as BlockHeader;
+//   block.value = { header, txs: [] };
+//   // const resp2 = await fetch(
+//   //   `${baseApiUrl}block/height/${header.foliageBlockHeight}`
+//   // );
+//   // block.value = (await resp2.json()) as Block;
+//   loading.value = false;
+// }
+
+// loadPeekBlock();
+
+class WebSocketClient {
+  private websocket: WebSocket;
+  private url: string;
+
+  constructor(url: string) {
+    this.url = url;
+    this.websocket = new WebSocket(this.url);
+  }
+
+  public connect() {
+    this.websocket.onopen = (event) => {
+      console.log('WebSocket opened.');
+    };
+
+    this.websocket.onmessage = (event) => {
+      this.onMessageReceived(event.data);
+    };
+
+    this.websocket.onerror = (error) => {
+      console.error(`Error: ${error}`);
+    };
+
+    this.websocket.onclose = (event) => {
+      console.log(`WebSocket closed with code: ${event.code}`);
+    };
+  }
+
+  public send(data: string) {
+    if (this.websocket && this.websocket.readyState == WebSocket.OPEN) {
+      this.websocket.send(data);
+      console.log(`Message sent: ${data}`);
+    } else {
+      console.error('WebSocket is not open. Open url: ' + this.url);
+    }
+  }
+
+  public close() {
+    if (this.websocket) {
+      this.websocket.close();
+    }
+  }
+
+  private onMessageReceived(data: string) {
+    // console.log(`Received: ${data}`);
+
+    const block = JSON.parse(data) as Block;
+    blocks.value.unshift(block);
+    const MaxBlockNumber = 10;
+    blocks.value =
+      blocks.value.length > MaxBlockNumber
+        ? blocks.value.slice(0, MaxBlockNumber)
+        : blocks.value;
+  }
 }
 
-loadPeekBlock();
+let client = new WebSocketClient('wss://api.unimojo.io/ws/block');
+client.connect();
+
+onBeforeRouteLeave((to, from, next) => {
+  client.close();
+  next();
+});
 </script>
 
 <style scoped lang="scss">
