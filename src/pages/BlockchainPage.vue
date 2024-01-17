@@ -65,7 +65,18 @@
                       :rows="block.txSummaries"
                       :columns="columns"
                       row-key="name"
-                    />
+                    >
+                      <template v-slot:body-cell-sender="props">
+                        <q-td auto-width :props="props" class="ellipsis">
+                          {{ props.col.format(props.row.from) }}
+                        </q-td>
+                      </template>
+                      <template v-slot:body-cell-receiver="props">
+                        <q-td auto-width :props="props" class="ellipsis">
+                          {{ props.col.format(props.row.to) }}
+                        </q-td>
+                      </template>
+                    </q-table>
                   </q-card-section>
                 </q-card>
               </div>
@@ -81,7 +92,6 @@
 import { Ref, computed, ref, watch } from 'vue';
 import { bech32m } from '@scure/base';
 import { onBeforeRouteLeave } from 'vue-router';
-const baseApiUrl = 'https://api.unimojo.io/';
 const loading = ref(false);
 
 interface BlockHeader {
@@ -122,6 +132,40 @@ function encode(val: string) {
   return bech32m.encode('xch', bech32m.toWords(hexToUint8Array(val)));
 }
 
+const TxValidStatus: [string, number][] = [
+  ['Pending', 0],
+  ['Valid', 1],
+
+  // Invalid Status
+  // internal error
+  ['FailedToRetrieveAccountBalance', 3],
+  ['FailedToDeserializeVaultObject', 4],
+  ['InternalError', 5],
+  ['AccountDoesNotExist', 6],
+  ['VaultKeyDoesNotExist', 7],
+
+  // tick invalid status
+  ['InsufficientBalance', 11],
+  ['TickNotDeployed', 12],
+  ['TickFull', 13],
+  ['TickAmountExceedsLimit', 14],
+  ['TickAlreadyDeployed', 15],
+
+  // inscription invalid status
+  ['InscriptionInvalidJson', 21],
+  ['InscriptionInvalidTick', 22],
+  ['InscriptionInvalidOpCode', 23],
+  ['InscriptionInvalidMaxValue', 24],
+  ['InscriptionInvalidLimitValue', 25],
+  ['InscriptionInvalidAmountValue', 26],
+  ['InscriptionInvalidProtocol', 27],
+];
+
+const txStatusDict = TxValidStatus.reduce((pv, cv) => {
+  pv[cv[1]] = cv[0];
+  return pv;
+}, {} as { [key: number]: string });
+
 const blocks: Ref<Block[]> = ref([]);
 const columns = [
   {
@@ -140,6 +184,7 @@ const columns = [
     name: 'status',
     label: 'Status',
     field: 'status',
+    format: (val: number) => txStatusDict[val] ?? 'Unknown',
   },
   // {
   //   name: 'hash',
@@ -150,6 +195,12 @@ const columns = [
     name: 'raw',
     label: 'Raw Memo',
     field: 'rawText',
+  },
+  {
+    name: 'count',
+    label: 'Count',
+    field: 'count',
+    format: (val: string) => `×${val}`,
   },
 ];
 
@@ -167,6 +218,17 @@ const columns = [
 
 // loadPeekBlock();
 
+function loadBlock(data: string) {
+  const block = JSON.parse(data) as Block;
+  blocks.value.unshift(block);
+  const MaxBlockNumber = 10;
+  blocks.value =
+    blocks.value.length > MaxBlockNumber
+      ? blocks.value.slice(0, MaxBlockNumber)
+      : blocks.value;
+  loading.value = false;
+}
+
 class WebSocketClient {
   private websocket: WebSocket;
   private url: string;
@@ -177,7 +239,7 @@ class WebSocketClient {
   }
 
   public connect() {
-    this.websocket.onopen = (event) => {
+    this.websocket.onopen = (_event) => {
       console.log('WebSocket opened.');
     };
 
@@ -212,17 +274,12 @@ class WebSocketClient {
   private onMessageReceived(data: string) {
     // console.log(`Received: ${data}`);
 
-    const block = JSON.parse(data) as Block;
-    blocks.value.unshift(block);
-    const MaxBlockNumber = 10;
-    blocks.value =
-      blocks.value.length > MaxBlockNumber
-        ? blocks.value.slice(0, MaxBlockNumber)
-        : blocks.value;
+    loadBlock(data);
   }
 }
 
 let client = new WebSocketClient('wss://api.unimojo.io/ws/block');
+loading.value = true;
 client.connect();
 
 onBeforeRouteLeave((to, from, next) => {
@@ -234,5 +291,12 @@ onBeforeRouteLeave((to, from, next) => {
 <style scoped lang="scss">
 ::v-deep .q-markdown--link-external {
   color: $secondary;
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
 }
 </style>
